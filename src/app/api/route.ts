@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   const transcription = await openai.audio.transcriptions.create({
     file: fs.createReadStream(
-      path.join(process.cwd(), "uploads", audioFileName)
+      path.join(process.cwd(), "public", "uploads", audioFileName)
     ), // Use the dynamic file name
     model: "whisper-1",
   });

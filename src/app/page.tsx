@@ -7,11 +7,25 @@ export default function Home() {
   const [transcription, setTranscription] = useState<string | null>(null);
 
   const handleTranscription = async (audioFileName: string) => {
-    const response = await fetch(
-      `http://localhost:3000/api?file=${audioFileName}`
-    );
-    const data = await response.json();
-    setTranscription(data.message);
+    try {
+      // Remove leading "uploads/" if it exists
+      const sanitizedFileName = audioFileName.replace(/^uploads\//, "");
+      const response = await fetch(
+        `http://localhost:3000/api?file=${sanitizedFileName}`
+      );
+
+      // Check if the response is okay (status code 200-299)
+      if (!response.ok) {
+        const errorText = await response.text(); // Get the error text
+        throw new Error(`Error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      setTranscription(data.message);
+    } catch (error) {
+      console.error("Error fetching transcription:", error);
+      setTranscription("Failed to fetch transcription."); // Update the UI to reflect the error
+    }
   };
 
   return (
