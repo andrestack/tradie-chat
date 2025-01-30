@@ -10,15 +10,13 @@ export default function Home() {
 
   const handleTranscription = async (audioFileName: string) => {
     try {
-      // Remove leading "uploads/" if it exists
       const sanitizedFileName = audioFileName.replace(/^uploads\//, "");
       const response = await fetch(
         `http://localhost:3000/api?file=${sanitizedFileName}`
       );
 
-      // Check if the response is okay (status code 200-299)
       if (!response.ok) {
-        const errorText = await response.text(); // Get the error text
+        const errorText = await response.text();
         throw new Error(`Error: ${response.status} - ${errorText}`);
       }
 
@@ -26,7 +24,7 @@ export default function Home() {
       setTranscription(data.message);
     } catch (error) {
       console.error("Error fetching transcription:", error);
-      setTranscription("Failed to fetch transcription."); // Update the UI to reflect the error
+      setTranscription("Failed to fetch transcription.");
     }
   };
 
@@ -35,7 +33,6 @@ export default function Home() {
       try {
         await navigator.clipboard.writeText(transcription);
         setCopied(true);
-        // Reset the copied state after 2 seconds
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
         console.error("Failed to copy text:", err);
@@ -44,15 +41,20 @@ export default function Home() {
   };
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        {transcription && (
-          <div className="relative group">
+    <main className="flex flex-col w-full min-h-screen bg-gray-50 relative">
+      <div className="text-center pt-12 pb-6">
+        <h1 className="text-2xl font-semibold text-gray-800">
+          Tell me about it
+        </h1>
+      </div>
+      <div className="flex-1 px-4 pb-32">
+        <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-sm p-6 min-h-[200px] relative group">
+          {transcription ? (
             <div className="flex items-start gap-2">
-              <h1 className="max-w-[600px]">{transcription}</h1>
+              <p className="text-gray-800">{transcription}</p>
               <button
                 onClick={copyToClipboard}
-                className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
                 title="Copy to clipboard"
               >
                 {copied ? (
@@ -62,13 +64,14 @@ export default function Home() {
                 )}
               </button>
             </div>
-          </div>
-        )}
-        {!transcription && (
-          <h1 className="text-gray-500">Transcription will appear here.</h1>
-        )}
-      </main>
+          ) : (
+            <span className="text-gray-400 italic">
+              Your words will appear here...
+            </span>
+          )}
+        </div>
+      </div>
       <AudioRecorder onTranscribe={handleTranscription} />
-    </div>
+    </main>
   );
 }

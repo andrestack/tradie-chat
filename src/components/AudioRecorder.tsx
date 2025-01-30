@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Mic, Square } from "lucide-react";
 
 interface AudioRecorderProps {
   onTranscribe: (audioFileName: string) => void; // Prop to handle transcription
@@ -98,36 +99,29 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4 border rounded-lg">
-      <h2 className="text-xl font-semibold">Audio Recorder</h2>
-
-      <div className="flex gap-4">
-        {!isRecording ? (
-          <button
-            onClick={startRecording}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Start Recording
-          </button>
+    <div className="fixed bottom-0 left-0 right-0 p-8 flex flex-col items-center bg-gradient-to-t from-gray-50 to-transparent pb-12">
+      <button
+        onClick={isRecording ? stopRecording : startRecording}
+        className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 ${
+          isRecording
+            ? "bg-red-500 animate-pulse"
+            : "bg-red-600 hover:bg-red-700"
+        }`}
+      >
+        {isRecording ? (
+          <Square className="w-6 h-6 text-white" />
         ) : (
-          <button
-            onClick={stopRecording}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-          >
-            Stop Recording
-          </button>
+          <Mic className="w-6 h-6 text-white" />
         )}
-      </div>
-
+      </button>
       {audioURL && (
         <div className="mt-4">
-          <audio controls src={audioURL} />
+          <audio controls src={audioURL} className="w-48" />
         </div>
       )}
-
       {uploadStatus && (
         <p
-          className={`mt-2 ${
+          className={`mt-2 text-sm ${
             uploadStatus.includes("failed") ? "text-red-500" : "text-green-500"
           }`}
         >
