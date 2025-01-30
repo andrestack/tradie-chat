@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 import { NextRequest } from "next/server";
-import { fs } from "fs";
+import fs from "fs";
 
 export async function POST(request: Request) {
   try {
@@ -50,18 +50,18 @@ export async function GET(request: NextRequest) {
   if (!audioFileName) {
     return new Response(JSON.stringify({ error: "File name is required" }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
   const filePath = join(process.cwd(), "public", "uploads", audioFileName);
   console.log(filePath);
-  
+
   // Check if the file exists
   if (!fs.existsSync(filePath)) {
     return new Response(JSON.stringify({ error: "File not found" }), {
       status: 404,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
