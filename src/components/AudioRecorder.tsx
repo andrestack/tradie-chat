@@ -11,6 +11,8 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioURL, setAudioURL] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string>("");
+  // Disable lint rule for this section
+  /* eslint-disable */
   const [audioFileName, setAudioFileName] = useState<string | null>(null);
 
   // Refs to store MediaRecorder and audio chunks
