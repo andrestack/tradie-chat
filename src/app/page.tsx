@@ -13,7 +13,7 @@ export default function Home() {
     try {
       const sanitizedFileName = audioFileName.replace(/^uploads\//, "");
       const response = await fetch(
-        `http://localhost:3000/api?file=${sanitizedFileName}`
+        `${process.env.NEXT_PUBLIC_API_URL}?file=${sanitizedFileName}`
       );
 
       if (!response.ok) {
