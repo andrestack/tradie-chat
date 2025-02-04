@@ -1,34 +1,33 @@
 import { NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import { join } from "path";
 import { NextRequest } from "next/server";
-import fs from "fs";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import r2Client from "@/lib/r2Client";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const audioFile = formData.get("audio") as File;
 
     if (!audioFile) {
-      return NextResponse.json(
-        { error: "No audio file provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadDir = join(process.cwd(), "public", "uploads");
-
-    // Convert the file to a Buffer
+    // Convert File to Buffer
     const bytes = await audioFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create unique filename with timestamp
+    // Create Unique Filename
     const filename = `audio-${Date.now()}.wav`;
-    const filepath = join(uploadDir, filename);
-    console.log(filepath);
-    // Write the file to the uploads directory
-    await writeFile(filepath, buffer);
+
+    // Upload to R2 using AWS SDK v3
+    const uploadParams = {
+      Bucket: "audio-uploads",
+      Key: filename,
+      Body: buffer,
+      ContentType: "audio/wav",
+    };
+
+    await r2Client.send(new PutObjectCommand(uploadParams));
 
     return NextResponse.json({
       message: "Audio uploaded successfully",
@@ -36,34 +35,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error uploading audio:", error);
-    return NextResponse.json(
-      { error: "Error uploading audio file" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Error uploading audio file" }, { status: 500 });
   }
-}
-
-export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const audioFileName = url.searchParams.get("file");
-
-  if (!audioFileName) {
-    return new Response(JSON.stringify({ error: "File name is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const filePath = join(process.cwd(), "public", "uploads", audioFileName);
-  console.log(filePath);
-
-  // Check if the file exists
-  if (!fs.existsSync(filePath)) {
-    return new Response(JSON.stringify({ error: "File not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Proceed with transcription logic...
 }

@@ -1,17 +1,26 @@
 import { NextRequest } from "next/server";
-import fs from "fs";
 import OpenAI from "openai";
-import path from "path";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import r2Client from "@/lib/r2Client";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPEN_API_KEY, // Ensure your API key is set in .env
+  apiKey: process.env.OPEN_API_KEY,
 });
 
 export async function GET(request: NextRequest) {
   try {
-    // Extract the file name from the query parameters
-    const url = new URL(request.url);
-    const audioFileName = url.searchParams.get("file");
+    // Safely parse the URL and get the file parameter
+    let audioFileName;
+    try {
+      const urlParams = new URLSearchParams(request.nextUrl.search);
+      audioFileName = urlParams.get("file");
+    } catch (error) {
+      console.error("Error parsing URL:", error);
+      return new Response(JSON.stringify({ error: "Invalid URL" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     if (!audioFileName) {
       return new Response(JSON.stringify({ error: "File name is required" }), {
@@ -20,21 +29,66 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Transcribe audio using Whisper
+    // Clean the filename
+    const fileKey = audioFileName.split("/").pop() || audioFileName;
+
+    // Fetch from R2
+    const getObjectParams = {
+      Bucket: "audio-uploads",
+      Key: fileKey,
+    };
+
+    const { Body } = await r2Client.send(new GetObjectCommand(getObjectParams));
+
+    if (!Body) {
+      return new Response(JSON.stringify({ error: "File not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Convert the stream to a buffer
+    let audioBuffer: Buffer;
+    try {
+      const chunks: Uint8Array[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for await (const chunk of Body as any) {
+        chunks.push(chunk);
+      }
+      audioBuffer = Buffer.concat(chunks);
+    } catch (error) {
+      console.error("Error converting stream to buffer:", error);
+      return new Response(
+        JSON.stringify({ error: "Error processing audio file" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Create a File object from the buffer
+    const file = new File([audioBuffer], fileKey, {
+      type: "audio/wav", // Adjust based on your file type
+    });
+
+    // Send to Whisper API
     const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(
-        path.join(process.cwd(), "public", "uploads", audioFileName)
-      ),
+      file: file,
       model: "whisper-1",
     });
 
     const transcribedText = transcription.text;
 
-    // Generate chat response using GPT-4
+    // Generate chat response
     const chatResponse = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
-        { role: "system", content: "You are an AI assistant that helps process and analyze speech transcriptions. Please organise the transcript into a structured format, with sections for speaker's name, project name, hours worked, and expenses if any. You can summarise the transcript into a few sentences before the structured format." },
+        {
+          role: "system",
+          content:
+            "You are an AI assistant that helps process and analyze speech transcriptions. Please organize the transcript into a structured format, with sections for speaker's name, project name, hours worked, and expenses if any. You can summarize the transcript into a few sentences before the structured format.",
+        },
         { role: "user", content: transcribedText },
       ],
       temperature: 0.7,
@@ -54,17 +108,14 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error processing request:", error);
     return new Response(
-      JSON.stringify({ error: "Internal Server Error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        error: "Internal Server Error", 
+        details: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { "Content-Type": "application/json" } 
+      }
     );
   }
 }
-
-
-// on the client: create an audio recorder with a microphone
-// on the client: create a button to start recording
-// on the client: create a button to stop recording
-// on the client: create a button to send the recording to the server, using a blob and fetch
-// on the server: read the blob into memory and send it to the openai api
-// on the server: return the transcription as a json object
-// on the client: display the transcription in the browser in a text aread with a copy to clipboard button

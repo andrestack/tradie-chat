@@ -8,26 +8,75 @@ export default function Home() {
   const [transcription, setTranscription] = useState<string | null>(null);
   const [chatResponse, setChatResponse] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleTranscription = async (audioFileName: string) => {
+  const handleTranscription = async (audioBlob: Blob) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const sanitizedFileName = audioFileName.replace(/^uploads\//, "");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}?file=${sanitizedFileName}`
-      );
+      // First, upload the audio file
+      const formData = new FormData();
+      formData.append("audio", audioBlob, `audio-${Date.now()}.wav`);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error: ${response.status} - ${errorText}`);
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status}`);
       }
 
-      const data = await response.json();
-      setTranscription(data.transcription);
-      setChatResponse(data.chatResponse);
+      const uploadData = await uploadResponse.json();
+      const { filename } = uploadData;
+
+      if (!filename) {
+        throw new Error('No filename received from upload');
+      }
+
+      // Now call the main API endpoint for transcription and analysis
+      const processResponse = await fetch(`/api?file=${encodeURIComponent(filename)}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!processResponse.ok) {
+        let errorMessage = 'Failed to process audio';
+        try {
+          const errorData = await processResponse.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (error) {
+          errorMessage = await processResponse.text();
+          console.error("Error parsing transcription response:", error);
+        }
+        throw new Error(`${errorMessage} (Status: ${processResponse.status})`);
+      }
+
+      const processData = await processResponse.json();
+      
+      if (processData.transcription) {
+        setTranscription(processData.transcription);
+      } else {
+        throw new Error('No transcription in response');
+      }
+
+      if (processData.chatResponse) {
+        setChatResponse(processData.chatResponse);
+      } else {
+        throw new Error('No chat response in response');
+      }
+
     } catch (error) {
-      console.error("Error fetching transcription:", error);
-      setTranscription("Failed to fetch transcription.");
-      setChatResponse("Failed to generate chat response.");
+      console.error("Error in handleTranscription:", error);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      setTranscription(null);
+      setChatResponse(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,6 +87,7 @@ export default function Home() {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy text:", err);
+      setError("Failed to copy to clipboard");
     }
   };
 
@@ -48,6 +98,26 @@ export default function Home() {
           Tell me about it
         </h1>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="w-full max-w-2xl mx-auto mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{error}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="w-full max-w-2xl mx-auto mb-4">
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded relative">
+            Processing audio... Please wait...
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 px-4 pb-32">
         <div className="w-full max-w-2xl mx-auto space-y-4">
           {/* Transcription Card */}
