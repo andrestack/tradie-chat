@@ -107,14 +107,17 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error processing request:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+
     return new Response(
-      JSON.stringify({ 
-        error: "Internal Server Error", 
-        details: error.message 
+      JSON.stringify({
+        error: "Internal Server Error",
+        details: errorMessage, // Use the error message safely
       }),
-      { 
-        status: 500, 
-        headers: { "Content-Type": "application/json" } 
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
