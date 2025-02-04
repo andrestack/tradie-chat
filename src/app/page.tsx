@@ -6,6 +6,7 @@ import { Copy, Check } from "lucide-react";
 
 export default function Home() {
   const [transcription, setTranscription] = useState<string | null>(null);
+  const [chatResponse, setChatResponse] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleTranscription = async (audioFileName: string) => {
@@ -21,22 +22,22 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setTranscription(data.message);
+      setTranscription(data.transcription);
+      setChatResponse(data.chatResponse);
     } catch (error) {
       console.error("Error fetching transcription:", error);
       setTranscription("Failed to fetch transcription.");
+      setChatResponse("Failed to generate chat response.");
     }
   };
 
-  const copyToClipboard = async () => {
-    if (transcription) {
-      try {
-        await navigator.clipboard.writeText(transcription);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error("Failed to copy text:", err);
-      }
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy text:", err);
     }
   };
 
@@ -48,27 +49,64 @@ export default function Home() {
         </h1>
       </div>
       <div className="flex-1 px-4 pb-32">
-        <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-sm p-6 min-h-[200px] relative group">
-          {transcription ? (
+        <div className="w-full max-w-2xl mx-auto space-y-4">
+          {/* Transcription Card */}
+          <div className="bg-white rounded-xl shadow-sm p-6 relative group">
+            <h2 className="text-sm font-medium text-gray-500 mb-2">
+              Transcription
+            </h2>
             <div className="flex items-start gap-2">
-              <p className="text-gray-800">{transcription}</p>
-              <button
-                onClick={copyToClipboard}
-                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
-                title="Copy to clipboard"
-              >
-                {copied ? (
-                  <Check className="w-5 h-5 text-green-500" />
-                ) : (
-                  <Copy className="w-5 h-5 text-gray-500" />
+              <p className="text-gray-800">
+                {transcription || (
+                  <span className="text-gray-400 italic">
+                    Your words will appear here...
+                  </span>
                 )}
-              </button>
+              </p>
+              {transcription && (
+                <button
+                  onClick={() => copyToClipboard(transcription)}
+                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
+                  title="Copy to clipboard"
+                >
+                  {copied ? (
+                    <Check className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <Copy className="w-5 h-5 text-gray-500" />
+                  )}
+                </button>
+              )}
             </div>
-          ) : (
-            <span className="text-gray-400 italic">
-              Your words will appear here...
-            </span>
-          )}
+          </div>
+
+          {/* Chat Response Card */}
+          <div className="bg-white rounded-xl shadow-sm p-6 relative group">
+            <h2 className="text-sm font-medium text-gray-500 mb-2">
+              AI Analysis
+            </h2>
+            <div className="flex items-start gap-2">
+              <p className="text-gray-800 whitespace-pre-line">
+                {chatResponse || (
+                  <span className="text-gray-400 italic">
+                    AI analysis will appear here...
+                  </span>
+                )}
+              </p>
+              {chatResponse && (
+                <button
+                  onClick={() => copyToClipboard(chatResponse)}
+                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
+                  title="Copy to clipboard"
+                >
+                  {copied ? (
+                    <Check className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <Copy className="w-5 h-5 text-gray-500" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       <AudioRecorder onTranscribe={handleTranscription} />

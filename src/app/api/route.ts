@@ -4,34 +4,62 @@ import OpenAI from "openai";
 import path from "path";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPEN_API_KEY,
+  apiKey: process.env.OPEN_API_KEY, // Ensure your API key is set in .env
 });
 
 export async function GET(request: NextRequest) {
-  // Extract the file name from the query parameters
-  const url = new URL(request.url);
-  const audioFileName = url.searchParams.get("file"); // Get the 'file' parameter from the URL
+  try {
+    // Extract the file name from the query parameters
+    const url = new URL(request.url);
+    const audioFileName = url.searchParams.get("file");
 
-  // Check if the file name is provided
-  if (!audioFileName) {
-    return new Response(JSON.stringify({ error: "File name is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
+    if (!audioFileName) {
+      return new Response(JSON.stringify({ error: "File name is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Transcribe audio using Whisper
+    const transcription = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(
+        path.join(process.cwd(), "public", "uploads", audioFileName)
+      ),
+      model: "whisper-1",
     });
+
+    const transcribedText = transcription.text;
+
+    // Generate chat response using GPT-4
+    const chatResponse = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: "You are an AI assistant that helps process and analyze speech transcriptions. Please organise the transcript into a structured format, with sections for speaker's name, project name, hours worked, and expenses if any. You can summarise the transcript into a few sentences before the structured format." },
+        { role: "user", content: transcribedText },
+      ],
+      temperature: 0.7,
+      max_tokens: 150,
+    });
+
+    return new Response(
+      JSON.stringify({
+        transcription: transcribedText,
+        chatResponse: chatResponse.choices[0].message.content,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("Error processing request:", error);
+    return new Response(
+      JSON.stringify({ error: "Internal Server Error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
-
-  const transcription = await openai.audio.transcriptions.create({
-    file: fs.createReadStream(
-      path.join(process.cwd(), "public", "uploads", audioFileName)
-    ), // Use the dynamic file name
-    model: "whisper-1",
-  });
-
-  return new Response(JSON.stringify({ message: transcription.text }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }
+
 
 // on the client: create an audio recorder with a microphone
 // on the client: create a button to start recording
