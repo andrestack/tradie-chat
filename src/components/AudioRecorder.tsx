@@ -18,15 +18,40 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
   // Start Recording
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder.current = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100,
+          channelCount: 1,
+        },
+      });
+
+      const options = {
+        mimeType: "audio/webm;codecs=opus",
+      };
+
+      try {
+        mediaRecorder.current = new MediaRecorder(stream, options);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
+        // Fallback for iOS Safari
+        mediaRecorder.current = new MediaRecorder(stream, {
+          mimeType: "audio/mp4",
+        });
+      }
 
       mediaRecorder.current.ondataavailable = (event) => {
-        audioChunks.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
       };
 
       mediaRecorder.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunks.current, { type: "audio/wav" });
+        const audioBlob = new Blob(audioChunks.current, {
+          type: mediaRecorder.current?.mimeType || "audio/webm;codecs=opus",
+        });
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioURL(audioUrl);
 
@@ -44,12 +69,14 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
         }
       };
 
-      mediaRecorder.current.start();
+      mediaRecorder.current.start(100); // Collect data every 100ms
       setIsRecording(true);
       setStatus("Recording...");
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      setStatus("Error accessing microphone");
+      setStatus(
+        "Error accessing microphone. Please ensure microphone permissions are granted."
+      );
     }
   };
 
