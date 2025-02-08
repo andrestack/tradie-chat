@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         {
           role: "system",
           content:
-            "You are an AI assistant that helps process and analyze speech transcriptions. Please organize the transcript into a structured format, with sections for speaker's name, project name, hours worked, and expenses if any. You can summarize the transcript into a few sentences before the structured format.",
+            "You are an AI assistant that helps process and analyze speech transcriptions. Please organize the transcript into a structured format, with sections for speaker's name, project name, hours worked, and expenses if any.",
         },
         { role: "user", content: transcribedText },
       ],
