@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Tradie Chat application is a web-based voice recording and transcription system that allows users to record audio messages, transcribe them, and receive AI-powered analysis of the content. The application is built using Next.js 14, TypeScript, and integrates with OpenAI's Whisper API for transcription and GPT-4 for content analysis.
+The Tradie Chat application is a Progressive Web App voice recording and transcription system that allows users to record audio messages, transcribe them, and receive AI-powered analysis of the content. The application is built using Next.js 14, TypeScript, and integrates with OpenAI's Whisper API for transcription and GPT-4 for content analysis. The app should also be ready to be deployed to native environments using Expo.
 
 ## Tech Stack
 
@@ -30,6 +30,12 @@ src/
 └── lib/
     ├── r2Client.ts           # Cloudflare R2 client configuration
     └── utils.ts              # Utility functions
+└── public/                   # Static and PWA assets
+    ├── manifest.json         # PWA manifest configuration
+    ├── sw.js                 # Service Worker for offline functionality
+    ├── icon-192x192.png     # PWA icons
+    ├── icon-512x512.png     # PWA icons
+    └── [other static assets]
 ```
 
 ## Core Components
@@ -170,5 +176,42 @@ Please analyze the transcription and provide a structured response with these se
 4. Project management features
 5. Reporting and analytics
 6. Multi-language support
+
+## PWA Configuration
+
+### Manifest (manifest.json)
+
+The application is configured as a Progressive Web App with the following key features:
+
+- **Name**: "Tradie Chat"
+- **Short Name**: "TradieChat"
+- **Display Mode**: Standalone
+- **Theme Color**: #ef4444 (Red)
+- **Background Color**: #ffffff (White)
+- **Icons**: Includes both 192x192 and 512x512 sizes with maskable support
+- **Start URL**: "/"
+
+### Service Worker (sw.js)
+
+The service worker provides offline capabilities and improved performance:
+
+- **Cache Name**: "tradie-chat-v1"
+- **Cached Resources**:
+  - Main application (/)
+  - Index HTML
+  - Manifest
+  - Icons
+- **Features**:
+  - Installation handling with resource caching
+  - Fetch event handling with cache-first strategy
+  - Offline fallback support
+
+### PWA Features
+
+1. **Installable**: Users can install the app on their devices
+2. **Offline Support**: Basic functionality works without internet
+3. **Native-like Experience**: Standalone mode without browser chrome
+4. **Responsive Design**: Adapts to all screen sizes
+5. **Fast Loading**: Service worker caching for improved performance
 
 This documentation provides a comprehensive overview of the application's architecture and implementation details, suitable for senior developers to understand and implement the system in different templates while maintaining the core logic and functionality.
