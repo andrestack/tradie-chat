@@ -1,10 +1,8 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
-// Ensure that the environment variables are defined
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-console.log("Access Key ID:", accessKeyId);
+
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-console.log("Secret Access Key:", secretAccessKey);
 
 if (!accessKeyId || !secretAccessKey) {
   throw new Error(

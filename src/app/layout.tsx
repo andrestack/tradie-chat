@@ -5,13 +5,13 @@ import type { Metadata, Viewport } from "next";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tradie Chat",
-  description: "Voice-enabled chat application for tradies",
+  title: "Yarn it",
+  description: "Voice-enabled copy writing tool",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Tradie Chat",
+    title: "Yarn it",
   },
 };
 

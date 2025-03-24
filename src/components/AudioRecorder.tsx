@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Mic, Square } from "lucide-react";
 
 interface AudioRecorderProps {
@@ -12,8 +12,32 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
   const [audioURL, setAudioURL] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<string>("");
+  const [recordingTime, setRecordingTime] = useState<string>("00:00:00");
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
+  const timerInterval = useRef<NodeJS.Timeout | null>(null);
+  const startTime = useRef<number>(0);
+
+  useEffect(() => {
+    return () => {
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current);
+      }
+    };
+  }, []);
+
+  const updateTimer = () => {
+    const elapsed = Date.now() - startTime.current;
+    const seconds = Math.floor((elapsed / 1000) % 60);
+    const minutes = Math.floor((elapsed / 1000 / 60) % 60);
+    const hours = Math.floor(elapsed / 1000 / 60 / 60);
+
+    setRecordingTime(
+      `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+    );
+  };
 
   // Start Recording
   const startRecording = async () => {
@@ -65,13 +89,15 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
           setStatus("Error processing audio");
         } finally {
           setIsProcessing(false);
-          audioChunks.current = []; // Clear previous recording
+          audioChunks.current = [];
         }
       };
 
-      mediaRecorder.current.start(100); // Collect data every 100ms
+      mediaRecorder.current.start(100);
       setIsRecording(true);
       setStatus("Recording...");
+      startTime.current = Date.now();
+      timerInterval.current = setInterval(updateTimer, 1000);
     } catch (error) {
       console.error("Error accessing microphone:", error);
       setStatus(
@@ -87,38 +113,62 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
       setIsRecording(false);
       mediaRecorder.current.stream.getTracks().forEach((track) => track.stop());
       setStatus("Processing...");
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current);
+      }
     }
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-8 flex flex-col items-center bg-gradient-to-t from-gray-50 to-transparent pb-12">
-      <button
-        onClick={isRecording ? stopRecording : startRecording}
-        disabled={isProcessing}
-        className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 ${
-          isRecording
-            ? "bg-red-500 animate-pulse"
-            : isProcessing
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-red-600 hover:bg-red-700"
+    <div className="w-full max-w-xl mx-auto">
+      <div
+        className={`bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-full p-4 flex items-center justify-between ${
+          isRecording ? "border-2 border-red-500" : ""
         }`}
       >
-        {isRecording ? (
-          <Square className="w-6 h-6 text-white" />
-        ) : (
-          <Mic className="w-6 h-6 text-white" />
-        )}
-      </button>
-
-      {audioURL && !isRecording && (
-        <div className="mt-4">
-          <audio controls src={audioURL} className="w-48" />
+        <div className="flex items-center gap-3">
+          <div
+            className={`flex items-center gap-2 ${
+              isRecording ? "text-red-500" : "text-white"
+            }`}
+          >
+            <div
+              className={`w-3 h-3 rounded-full ${
+                isRecording ? "bg-red-500 animate-pulse" : "bg-white"
+              }`}
+            />
+            {isRecording ? "REC" : "Ready"}
+          </div>
         </div>
-      )}
+
+        <div className="text-white text-xl font-mono">{recordingTime}</div>
+
+        <button
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={isProcessing}
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+            isRecording
+              ? "bg-red-500 hover:bg-red-600"
+              : isProcessing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-white hover:bg-gray-100"
+          }`}
+        >
+          {isRecording ? (
+            <Square className="w-5 h-5 text-white" />
+          ) : (
+            <Mic
+              className={`w-5 h-5 ${
+                isProcessing ? "text-gray-500" : "text-gray-900"
+              }`}
+            />
+          )}
+        </button>
+      </div>
 
       {status && (
         <p
-          className={`mt-2 text-sm ${
+          className={`mt-2 text-sm text-center ${
             status.includes("Error")
               ? "text-red-500"
               : status.includes("complete")
@@ -131,8 +181,14 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribe }) => {
       )}
 
       {isProcessing && (
-        <div className="mt-2">
+        <div className="mt-2 flex justify-center">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+
+      {audioURL && !isRecording && !isProcessing && (
+        <div className="mt-4 flex justify-center">
+          <audio controls src={audioURL} className="w-full max-w-md" />
         </div>
       )}
     </div>
