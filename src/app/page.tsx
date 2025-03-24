@@ -79,7 +79,7 @@ export default function Home() {
       setIsLoading(false);
     }
   };
-
+  
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -90,12 +90,12 @@ export default function Home() {
       setError("Failed to copy to clipboard");
     }
   };
-
+  
   return (
     <main className="flex flex-col w-full min-h-screen bg-gray-50 relative">
       <div className="text-center pt-12 pb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">
-          Tell me about it
+        <h1 className="text-2xl font-semibold font-mono text-gray-800">
+          Tell me about your problem <br /> and I will give you no BS advice
         </h1>
       </div>
 
@@ -135,9 +135,9 @@ export default function Home() {
               </p>
               {transcription && (
                 <button
-                  onClick={() => copyToClipboard(transcription)}
-                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
-                  title="Copy to clipboard"
+                onClick={() => copyToClipboard(transcription)}
+                className="opacity-100 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
+                title="Copy to clipboard"
                 >
                   {copied ? (
                     <Check className="w-5 h-5 text-green-500" />
@@ -152,7 +152,7 @@ export default function Home() {
           {/* Chat Response Card */}
           <div className="bg-white rounded-xl shadow-sm p-6 relative group">
             <h2 className="text-sm font-medium text-gray-500 mb-2">
-              AI Analysis
+              AI Response
             </h2>
             <div className="flex items-start gap-2">
               <p className="text-gray-800 whitespace-pre-line">
@@ -164,9 +164,9 @@ export default function Home() {
               </p>
               {chatResponse && (
                 <button
-                  onClick={() => copyToClipboard(chatResponse)}
-                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
-                  title="Copy to clipboard"
+                onClick={() => copyToClipboard(chatResponse)}
+                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-gray-100 rounded-md transition-all"
+                title="Copy to clipboard"
                 >
                   {copied ? (
                     <Check className="w-5 h-5 text-green-500" />
