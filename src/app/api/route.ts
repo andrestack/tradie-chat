@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     // Generate chat response
     const chatResponse = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -117,8 +117,8 @@ export async function GET(request: NextRequest) {
         },
         { role: "user", content: transcribedText },
       ],
-      temperature: 0.7,
-      max_tokens: 150,
+      temperature: 0.4,
+      max_tokens: 512,
     });
 
     return new Response(

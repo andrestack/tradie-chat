@@ -99,7 +99,7 @@ export default function Home() {
     <main className="flex flex-col w-full min-h-screen bg-gray-50 relative">
       <div className="text-center pt-8 pb-4">
         <h1 className="text-2xl font-semibold font-mono text-gray-800">
-          Tell me about your problem <br /> and I will give you no BS advice
+          Tell me about your problem <br /> and I will give you no-BS advice
         </h1>
       </div>
 
@@ -162,7 +162,7 @@ export default function Home() {
               AI Response
             </h2>
             <div className="flex items-start gap-2">
-              <div className="text-gray-800 whitespace-pre-line flex-grow overflow-y-auto max-h-[500px]">
+              <div className="text-gray-800 whitespace-pre-line flex-grow">
                 {chatResponse || (
                   <span className="text-gray-400 italic">
                     AI analysis will appear here...
